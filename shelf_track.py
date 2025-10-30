@@ -1,6 +1,7 @@
 import sqlite3
 
-BOOKS_DATABASE = "ebookstore.db"
+DATABASE = "ebookstore.db"
+BOOKS_DATABASE = "books"
 
 
 def check_databases() -> None:
@@ -8,9 +9,9 @@ def check_databases() -> None:
     Used to make sure that all the database tables exist.
     :return: None
     """
-    db = sqlite3.connect(BOOKS_DATABASE)
+    db = sqlite3.connect(DATABASE)
     cursor = db.cursor()
-    cursor.execute("CREATE TABLE IF NOT EXISTS books ("
+    cursor.execute(f"CREATE TABLE IF NOT EXISTS {BOOKS_DATABASE} ("
                    "id text PRIMARY KEY,"
                    "title text,"
                    "authorID text,"
@@ -19,8 +20,49 @@ def check_databases() -> None:
     cursor.close()
     db.close()
 
-def append_books(data):
-    pass
+
+def update_books(data: list) -> None:
+    """
+    This is used to update the books table in the database.
+    :param data: list of data to be overwritten.
+    :return: None
+    """
+
+    # Set up connection
+    book_id, title, author_id, quantity = data
+    db = sqlite3.connect(DATABASE)
+    cursor = db.cursor()
+
+    # Update the data and save
+    cursor.execute(f"UPDATE {BOOKS_DATABASE}"
+                   f"SET title = {title}, authorID = {author_id}, qty = {quantity}"
+                   f"WHERE id = {book_id}")
+    db.commit()
+
+    # Close the connection
+    cursor.close()
+    db.close()
+
+
+def append_books(data: list) -> None:
+    """
+    This is used to append new data to books table
+    :param data: list of data to add
+    :return: None
+    """
+
+    # Set up the connection
+    db = sqlite3.connect(DATABASE)
+    cursor = db.cursor()
+
+    # Add it and save
+    cursor.execute(f"INSERT INTO {BOOKS_DATABASE}(id, title, authorID, qty)"
+                   f"VALUES(?, ?, ?, ?);", tuple(data))
+    db.commit()
+
+    # Close the connection
+    cursor.close()
+    db.close()
 
 
 def add_new_book():
@@ -68,13 +110,16 @@ def main_menu() -> str:
         "Exit",
     ]
 
+    # Printing out the current accepted options and
+    # keeping the user trapped until one is selected
     while user_input not in options:
         print("\nThis is the main menu")
-        for option in options:
-            print(option)
+        for i in range(len(options)):
+            print(f"{i+1}. {options[i]}")
         user_input = input("Please choose one on the above.\n").title()
 
     return user_input
+
 
 check_databases()
 while True:
