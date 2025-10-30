@@ -363,6 +363,49 @@ def search_books() -> None:
             print("ID doesn't match id's in the system.")
 
 
+def delete_book():
+    """
+    Function to select the book to be deleted
+    with the aid of a different function it deleted the
+    record from the database
+    :return: None
+    """
+
+    data = load_books()
+    view_all_books()
+
+    index = get_digit(len(data), "Select which book you would "
+                                 "like to delete by number.\n")
+
+    book_to_delete = data[index-1]
+    book_id_to_delete = book_to_delete[0]
+
+    if yes_or_no("Are you sure you want to delete the book?"):
+        delete_from_database(book_id_to_delete)
+
+
+def delete_from_database(book_id: str) -> None:
+    """
+    A function used to delete a book from the database
+    :param book_id: The id of the book to delete
+    :return: None
+    """
+
+    # Making the sql command to delete the book
+    command = (f"DELETE FROM {BOOKS_DATABASE} "
+               f"WHERE id = {book_id};")
+
+    db = sqlite3.connect(DATABASE)
+    cursor = db.cursor()
+
+    cursor.execute(command)
+
+    # Save and exit
+    db.commit()
+    cursor.close()
+    db.close()
+
+
 def main_menu() -> str:
     """
     This is used to get specific strings for the menu
@@ -402,7 +445,7 @@ while True:
         case "Update":
             update_books()
         case "Delete":
-            pass
+            delete_book()
         case "Search":
             search_books()
         case "Exit":
