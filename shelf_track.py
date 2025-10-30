@@ -76,9 +76,9 @@ def add_new_book() -> None:
     print("Now adding a new book")
 
     # Gathering the data
-    book_id = get_id()
+    book_id = get_id(question="Please type in the books ID\n")
     title = get_book_title()
-    author_id = get_id()
+    author_id = get_id(question="Please type in the authors ID\n")
     quantity = get_digit(question="How many books are you adding?\n")
 
     # Condensing all the data and adding it to the database
@@ -106,16 +106,23 @@ def get_book_title(old_title: str = None) -> str:
             return user_input
 
 
-def get_id() -> str:
+def get_id(question: str = None) -> str:
     """
     This is used to get a valid number ID
+    :param question: This will be asked to the user
     :return: a string of whole numbers
     """
+
+    # Changing the question based on the type of ID required.
+    if question:
+        query = question
+    else:
+        query = "Please type in the ID. It must be a number.\n"
 
     satisfied = False
     user_input = ''
     while not satisfied:
-        user_input = input("Please type in the ID. It must be a number.\n")
+        user_input = input(query)
 
         # Making sure that the user has input something.
         if len(user_input) == 0:
@@ -200,6 +207,72 @@ def yes_or_no() -> bool:
         return False
 
 
+def view_all_books() -> None:
+    """
+    This is used to display all the data from the books table.
+    :return: None
+    """
+    data = load_books()
+
+    data = format_book_data(data)
+
+    # Then prints it all out all at once
+    for line in data:
+        print(line)
+
+
+def format_book_data(data: list) -> list:
+    """
+    This is used to format books regardless of how many there are.
+    :param data: list of book data.
+    :return: a list of strings meant to be displayed.
+    """
+
+    book_data_labels = [
+        "Book ID",
+        "Book Title",
+        "Author ID",
+        "Quantity"
+    ]
+
+    books_data = [""]
+    counter = 0
+
+    # This is formating all the data into an easy-to-read string
+    for book in data:
+        counter += 1
+        books_data.append(f"Book: {counter}")
+        for i in range(len(book)):
+            string = f"{book_data_labels[i].ljust(11)}: {book[i]}"
+            books_data.append(string)
+        books_data.append("")
+
+    return books_data
+
+
+def load_books() -> list:
+    """
+    Loading all the data from the books table and turning it into a
+    list of lists.
+    :return: list of books data in a list
+    """
+
+    # Connecting to the database
+    db = sqlite3.connect(DATABASE)
+    cursor = db.cursor()
+
+    # Getting all the data
+    cursor.execute(f"SELECT * FROM {BOOKS_DATABASE};")
+    data = cursor.fetchall()
+
+    cursor.close()
+    db.close()
+
+    # Making it a list of lists which is easier to use.
+    data = [list(x) for x in data]
+    return data
+
+
 def main_menu() -> str:
     """
     This is used to get specific strings for the menu
@@ -209,6 +282,7 @@ def main_menu() -> str:
 
     # Making a list of possible options that is easily editable
     options = [
+        "View",
         "Add",
         "Update",
         "Delete",
@@ -231,8 +305,10 @@ check_databases()
 while True:
     action = main_menu()
     match action:
+        case "View":
+            view_all_books()
         case "Add":
-            pass
+            add_new_book()
         case "Update":
             pass
         case "Delete":
