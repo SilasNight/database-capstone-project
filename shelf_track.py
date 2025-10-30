@@ -21,7 +21,7 @@ def check_databases() -> None:
     db.close()
 
 
-def update_books(data: list) -> None:
+def update_books_database(data: list) -> None:
     """
     This is used to update the books table in the database.
     :param data: list of data to be overwritten.
@@ -34,14 +34,59 @@ def update_books(data: list) -> None:
     cursor = db.cursor()
 
     # Update the data and save
-    cursor.execute(f"UPDATE {BOOKS_DATABASE}"
-                   f"SET title = {title}, authorID = {author_id}, qty = {quantity}"
-                   f"WHERE id = {book_id}")
+    command = (f"UPDATE {BOOKS_DATABASE} "
+               f"SET title = '{title}', authorID = {author_id}, qty = {quantity} "
+               f"WHERE id = {book_id};")
+
+    cursor.execute(command)
     db.commit()
 
     # Close the connection
     cursor.close()
     db.close()
+
+
+def update_books() -> None:
+    """
+    This is used to update a book that is already in the database
+    :return: Nothing
+    """
+
+    # Loading needed data and showing a list of books
+    data = load_books()
+    view_all_books()
+
+    # Getting the index of the book the user wants to edit
+    index = get_digit(constraint=len(data), question="Type in the number of the"
+                                                     " book would you like to edit?\n")
+
+    # Getting the selected book and displaying it
+    book_to_edit = data[index-1]
+    to_display = format_book_data([book_to_edit])
+    for line in to_display:
+        print(line)
+
+    # Getting the new values for the book
+    if yes_or_no(question=f"Do you want to change the title ({book_to_edit[1]})"):
+        new_title = get_book_title(book_to_edit[1])
+    else:
+        new_title = book_to_edit[1]
+
+    if yes_or_no(f"({book_to_edit[2]}) is the old auther ID. Do you want to change it?"):
+        new_author_id = get_id()
+    else:
+        new_author_id = book_to_edit[2]
+
+    if yes_or_no(f"Do you want to change the quantity :{book_to_edit[3]}"):
+        new_quantity = get_digit(question="How many books are there now?\n")
+    else:
+        new_quantity = book_to_edit[3]
+
+    updated_book = [book_to_edit[0], new_title, new_author_id, new_quantity]
+
+    # Giving the data to the other function to update the database.
+    update_books_database(updated_book)
+    print(f"Book {index} has been updated.")
 
 
 def append_books(data: list) -> None:
@@ -182,7 +227,7 @@ def get_digit(constraint: int = None, question: str = None) -> int:
     return potential_output
 
 
-def yes_or_no() -> bool:
+def yes_or_no(question: str = None) -> bool:
     """
     This function is used to ask the user a yes or no question
     and return a True or False as the outcome
@@ -191,6 +236,9 @@ def yes_or_no() -> bool:
 
     user_input = ""
     options = ["Yes", "No", "Y", "N"]
+
+    if question:
+        print(question)
 
     # Locking the user in until one of the answers are given
     while user_input not in options:
@@ -224,7 +272,7 @@ def view_all_books() -> None:
 def format_book_data(data: list) -> list:
     """
     This is used to format books regardless of how many there are.
-    :param data: list of book data.
+    :param data: This has to be a list of lists.
     :return: a list of strings meant to be displayed.
     """
 
@@ -352,7 +400,7 @@ while True:
         case "Add":
             add_new_book()
         case "Update":
-            pass
+            update_books()
         case "Delete":
             pass
         case "Search":
