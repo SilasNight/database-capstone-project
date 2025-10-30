@@ -1,7 +1,8 @@
 import sqlite3
 
 DATABASE = "ebookstore.db"
-BOOKS_DATABASE = "books"
+BOOKS_TABLE = "books"
+AUTHORS_TABLE = "author"
 
 
 def check_databases() -> None:
@@ -11,14 +12,44 @@ def check_databases() -> None:
     """
     db = sqlite3.connect(DATABASE)
     cursor = db.cursor()
-    cursor.execute(f"CREATE TABLE IF NOT EXISTS {BOOKS_DATABASE} ("
-                   "id text PRIMARY KEY,"
-                   "title text,"
-                   "authorID text,"
+
+    cursor.execute(f"CREATE TABLE IF NOT EXISTS {BOOKS_TABLE} ("
+                   "id text PRIMARY KEY, "
+                   "title text, "
+                   "authorID text, "
                    "qty int"
                    ");")
+
+    cursor.execute(f"CREATE TABLE IF NOT EXISTS {AUTHORS_TABLE} ("
+                   "id text PRIMARY KEY, "
+                   "name text, "
+                   "country text"
+                   ");")
+
     cursor.close()
     db.close()
+
+
+def load_authors():
+    """
+    This function is used to load all the data in the
+    authors table
+    :return: List of data from the
+    """
+
+    # Create a connection and get all the data from the table
+    db = sqlite3.connect(DATABASE)
+    cursor = db.cursor()
+    cursor.execute(f"SELECT * FROM {AUTHORS_TABLE}")
+    data = cursor.fetchall()
+
+    # Switching the data to list to make it easier to work with
+    data = [list(x) for x in data]
+
+    cursor.close()
+    db.close()
+
+    return data
 
 
 def update_books_database(data: list) -> None:
@@ -34,7 +65,7 @@ def update_books_database(data: list) -> None:
     cursor = db.cursor()
 
     # Update the data and save
-    command = (f"UPDATE {BOOKS_DATABASE} "
+    command = (f"UPDATE {BOOKS_TABLE} "
                f"SET title = '{title}', authorID = {author_id}, qty = {quantity} "
                f"WHERE id = {book_id};")
 
@@ -101,7 +132,7 @@ def append_books(data: list) -> None:
     cursor = db.cursor()
 
     # Add it and save
-    cursor.execute(f"INSERT INTO {BOOKS_DATABASE}(id, title, authorID, qty)"
+    cursor.execute(f"INSERT INTO {BOOKS_TABLE}(id, title, authorID, qty)"
                    f"VALUES(?, ?, ?, ?);", tuple(data))
     db.commit()
 
@@ -310,7 +341,7 @@ def load_books() -> list:
     cursor = db.cursor()
 
     # Getting all the data
-    cursor.execute(f"SELECT * FROM {BOOKS_DATABASE};")
+    cursor.execute(f"SELECT * FROM {BOOKS_TABLE};")
     data = cursor.fetchall()
 
     cursor.close()
@@ -392,7 +423,7 @@ def delete_from_database(book_id: str) -> None:
     """
 
     # Making the sql command to delete the book
-    command = (f"DELETE FROM {BOOKS_DATABASE} "
+    command = (f"DELETE FROM {BOOKS_TABLE} "
                f"WHERE id = {book_id};")
 
     db = sqlite3.connect(DATABASE)
@@ -420,6 +451,8 @@ def main_menu() -> str:
         "Update",
         "Delete",
         "Search",
+        "Add Author",
+        "Missing Authors",
         "Exit",
     ]
 
@@ -432,6 +465,8 @@ def main_menu() -> str:
         user_input = input("Please choose one on the above.\n").title()
 
     return user_input
+
+# TODO add the other table and add ways to edit it.
 
 
 check_databases()
@@ -448,6 +483,10 @@ while True:
             delete_book()
         case "Search":
             search_books()
+        case "Add Author":
+            pass
+        case "Missing Authors":
+            pass
         case "Exit":
             print("Have a nice day")
             break
