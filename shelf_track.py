@@ -273,6 +273,48 @@ def load_books() -> list:
     return data
 
 
+def search_books() -> None:
+    """
+    This shows the user the ID's off all the books stored and
+    lets them look for any ID and then displays that book if there is a match
+    :return: Nothing.
+    """
+
+    # Loading relevant data
+    data = load_books()
+    book_ids = [x[0] for x in data]
+
+    while True:
+
+        # Listing all the ID's
+        print("These are the searchable book IDs")
+        for ID in book_ids:
+            print(ID)
+
+        # Making sure that the user want's to search after
+        # being shown all the ID's
+        print("Would you like to search?")
+        if yes_or_no():
+
+            # Using the function to get a valid ID from the user
+            user_input = get_id(question="Please type in an ID to search for.\n")
+        else:
+            print("Going back to main menu")
+            break
+
+        # If the user entered an ID that is in the database it is displayed.
+        if user_input in book_ids:
+            print("Book Found.\n")
+            for book in data:
+                if book[0] == user_input:
+                    book = format_book_data([book])
+                    for line in book:
+                        print(line)
+                    break
+        else:
+            print("ID doesn't match id's in the system.")
+
+
 def main_menu() -> str:
     """
     This is used to get specific strings for the menu
@@ -314,7 +356,7 @@ while True:
         case "Delete":
             pass
         case "Search":
-            pass
+            search_books()
         case "Exit":
             print("Have a nice day")
             break
