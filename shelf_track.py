@@ -30,7 +30,7 @@ def check_databases() -> None:
     db.close()
 
 
-def load_authors():
+def load_authors() -> list | bool:
     """
     This function is used to load all the data in the
     authors table
@@ -44,7 +44,10 @@ def load_authors():
     data = cursor.fetchall()
 
     # Switching the data to list to make it easier to work with
-    data = [list(x) for x in data]
+    if len(data) != 0:
+        data = [list(x) for x in data]
+    else:
+        return False
 
     cursor.close()
     db.close()
@@ -468,6 +471,168 @@ def delete_from_database(book_id: str) -> None:
     db.close()
 
 
+def add_author(unassigned_id: str = None) -> None:
+    """
+    This is used to get the data about an author.
+    :param unassigned_id: This is to find inconsistencies with the data
+    :return: None
+    """
+
+    # Loading the authors data and making sure there is data to load
+    data = load_authors()
+    if data:
+        data = [x[0] for x in data]
+
+    # Getting the ID for the author if one wasn't provided
+    if unassigned_id:
+        print(f"{unassigned_id} is the Author ID.")
+        user_input = unassigned_id
+    else:
+        while True:
+            user_input = get_id("What is the authors ID.\n")
+            if data:
+                if user_input in data:
+                    print("Error that ID is already used.")
+                else:
+                    break
+            else:
+                break
+
+    # Getting the rest of the information
+    author_id = user_input
+    author_name = get_information("What is the authors name?\n")
+    author_country = get_information("What is the authors country?\n")
+
+    # Putting all the data in a list and appending the authors database
+    new_author = [author_id, author_name, author_country]
+    append_authors(new_author)
+
+
+def append_authors(data: list) -> None:
+    """
+    Used to write to the authors table.
+    :param data: The data that is to be written to the table
+    :return: None
+    """
+
+    # Making the connection
+    db = sqlite3.connect(DATABASE)
+    cursor = db.cursor()
+
+    # Making the command and putting it in the table
+    command = (f"INSERT INTO {AUTHORS_TABLE}(id, name, country) "
+               f"VALUES{tuple(data)};")
+    cursor.execute(command)
+
+    # Saving and closing the connection
+    db.commit()
+    cursor.close()
+    db.close()
+
+
+def get_information(question: str) -> str:
+    """
+    Used to get unverifiable data that the user has to confirm
+    :param question: The question to be asked to the user
+    :return: String that hopefully holds the desired information
+    """
+
+    # The user will remain in this look until they confirm that the
+    # data is accurate.
+    while True:
+        user_input = input(question)
+        if yes_or_no(f"Is ({user_input}) Correct?"):
+            break
+
+    return user_input
+
+
+def add_missing_authors() -> None:
+    """
+    This takes the data from the books table and makes sure that
+    the authors table has a match author and if not it prompts
+    the user to insert the missing data.
+    :return: Nothing
+    """
+
+    # Getting the data from the tables
+    books_data = load_books()
+    authors_data = load_authors()
+
+    # Making sure there are books to check the author id of
+    if not books_data:
+        print("There are no books in the store.")
+    else:
+
+        # Getting all the id's of the current authors
+        # to see what's missing.
+        if not authors_data:
+            authors_ids = []
+        else:
+            authors_ids = [x[0] for x in authors_data]
+        books_authors_ids = [x[2] for x in books_data]
+
+        # Finding the id's without author table information
+        details_required = []
+        for potentially_unused_id in books_authors_ids:
+            if potentially_unused_id not in authors_ids:
+                details_required.append(potentially_unused_id)
+
+        # Displaying errors as needed or getting the missing information.
+        if len(details_required) == 0:
+            print("No authors need extra information.")
+        else:
+            for unused_id in details_required:
+                add_author(unused_id)
+            print("That's all the authors from the store.")
+
+
+def view_authors() -> None:
+    """
+    This is used to view only the information of the authors and
+    shows all the data
+    :return: None
+    """
+
+    # Loading the data and making sure there is data to show.
+    data = load_authors()
+    if data:
+        data = format_author_data(data)
+        for line in data:
+            print(line)
+    else:
+        print("No Authors to show.")
+
+
+def format_author_data(data: list) -> list:
+    """
+    Takes in a list of authors and formats them all into a list of strings
+    used to display the information.
+    :param data: A list of author data lists NB
+    :return: None
+    """
+
+    # Titles for the information about to be displayed
+    titles = [
+        "Author ID",
+        "Name",
+        "Country",
+    ]
+
+    # Formatting the data to be uniform and look good
+    output = []
+    counter = 0
+    for author in data:
+        counter += 1
+        output.append(f"Author: {counter}")
+        for i in range(3):
+            string = f"{titles[i].ljust(10)}: {author[i]}"
+            output.append(string)
+        output.append("")
+
+    return output
+
+
 def main_menu() -> str:
     """
     This is used to get specific strings for the menu
@@ -483,6 +648,7 @@ def main_menu() -> str:
         "Delete",
         "Search",
         "Add Author",
+        "View Authors",
         "Missing Authors",
         "Exit",
     ]
@@ -519,9 +685,11 @@ while True:
         case "Search" | "5":
             search_books()
         case "Add Author" | "6":
-            pass
-        case "Missing Authors" | "7":
-            pass
-        case "Exit" | "8":
+            add_author()
+        case "View Author" | "7":
+            view_authors()
+        case "Missing Authors" | "8":
+            add_missing_authors()
+        case "Exit" | "9":
             print("Have a nice day")
             break
