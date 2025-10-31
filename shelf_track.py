@@ -633,6 +633,186 @@ def format_author_data(data: list) -> list:
     return output
 
 
+def update_author(data: list) -> None:
+    """
+    Used to update an existing entry in the author table
+    :param data: new data to be changed
+    :return: Nothing
+    """
+
+    # Connecting to the database
+    db = sqlite3.connect(DATABASE)
+    cursor = db.cursor()
+
+    # Changing the data
+    command = (f"UPDATE {AUTHORS_TABLE} "
+               f"SET name = {data[1]}, country = {data[2]} "
+               f"WHERE id = {data[0]};")
+    cursor.execute(command)
+
+    # Save and exit.
+    db.commit()
+    cursor.close()
+    db.close()
+
+
+# TODO to be added into a menu
+
+
+def edit_author() -> None:
+    """
+    This is used to get the information to edit an author
+    calls an updater to update the author table
+    :return: None
+    """
+
+    # loads the data and makes sure there is information to edit.
+    data = load_authors()
+    if data:
+
+        # Shows the user a list of authors to edit
+        view_authors()
+        index = get_digit(len(data), "type in the number of the "
+                                     "author you want to edit.")
+        author_to_edit = data[index-1]
+        author_id, author_name, author_country = author_to_edit
+
+        # The ID will remain unchanged.
+        print(f"Authors ID is {author_id}")
+
+        # Other information is gathered
+        if yes_or_no(f"Do you want to change the name ({author_name})?"):
+            author_name = get_information("What should the name of the author be?\n")
+
+        if yes_or_no(f"Do you want to change the country ({author_country})?"):
+            author_country = get_information("What should the authors country be?\n")
+
+        # Data is compounded and updated in the table.
+        new_author_data = [author_id, author_name, author_country]
+        update_author(new_author_data)
+
+    else:
+        print("There are no authors to edit.")
+
+
+def delete_author_selector() -> None:
+    """
+    Used to get the index of the author to delete
+    Uses a different function to delete the author from the table
+    :return: None
+    """
+
+    # Getting the data and then making sure there is data to act on
+    data = load_authors()
+    if data:
+        view_authors()
+
+        # Getting the data required to act on
+        index = get_digit(len(data), "Which author would you like to delete?\n")
+        author_to_delete = data[index-1]
+        author_id_to_delete = author_to_delete[0]
+
+        # Deleting it from the table
+        delete_author(author_id_to_delete)
+        print(f"Author {author_to_delete[1]} deleted")
+    else:
+        print("No authors to delete.")
+
+
+def delete_author(author_id: str) -> None:
+    """
+    Used to delete an author from the table with the authors id
+    :param author_id: the id of the author to be deleted
+    :return: None
+    """
+
+    # Connect to the database
+    db = sqlite3.connect(DATABASE)
+    cursor = db.cursor()
+
+    # Delete the required data
+    command = (f"DELETE FROM {AUTHORS_TABLE} "
+               f"WHERE id = {author_id};")
+    cursor.execute(command)
+
+    # Save and exit
+    db.commit()
+    cursor.close()
+    db.close()
+
+
+def view_all() -> None:
+    """
+    Used to view all information as detailed as possible.
+    :return: None
+    """
+
+    # Getting all the data needed
+    books_data = load_books()
+    authors_data = load_authors()
+
+    detailed_data = []
+
+    # Collecting data
+    # Checking if there are books
+    if books_data:
+        for book in books_data:
+            author_name = author_country = "Not available."
+
+            # Making sure there are authors and if there are finding
+            # the right one and adding the data
+            if authors_data:
+                book_author_id = book[2]
+                for author in authors_data:
+                    if author[0] == book_author_id:
+                        author_name, author_country = author[1:]
+
+            book_name = book[1]
+            book_quantity = book[3]
+
+            # Compiling all the data into one list.
+            detailed_data.append([book_name, book_quantity, author_name, author_country])
+
+        # Formating the data to be easy to read.
+        detailed_data = format_detailed(detailed_data)
+
+        # Printing all the data out.
+        for line in detailed_data:
+            print(line)
+    else:
+        print("No books to view")
+
+
+def format_detailed(data: list) -> list:
+    """
+    Formatting the data into easy to read strings.
+    And then returning that.
+    :param data: A list of data to be formatted.
+    :return: Nothing
+    """
+
+    titles = [
+        "Book Title",
+        "Amount",
+        "Author Name",
+        "From"
+    ]
+
+    output = []
+    counter = 0
+
+    # Matching the data with the related title for easy reading.
+    for book in data:
+        counter += 1
+        output.append(f"Book {counter}")
+        for i in range(4):
+            string = f"{titles[i].ljust(12)}: {book[i]}"
+            output.append(string)
+        output.append("="*20)
+
+    return output
+
+
 def main_menu() -> str:
     """
     This is used to get specific strings for the menu
@@ -642,14 +822,9 @@ def main_menu() -> str:
 
     # Making a list of possible options that is easily editable
     options = [
-        "View",
-        "Add",
-        "Update",
-        "Delete",
-        "Search",
-        "Add Author",
-        "View Authors",
-        "Missing Authors",
+        "View All",
+        "Books",
+        "Authors",
         "Exit",
     ]
 
@@ -667,29 +842,128 @@ def main_menu() -> str:
 
     return user_input
 
-# TODO add the other table and add ways to edit it.
+
+def books_menu() -> None:
+    """
+    This is a sub menu to make the main menu less cluttered.
+    :return: None
+    """
+
+    while True:
+        user_input = books_menu_selector()
+        match user_input:
+            case "View" | "1":
+                view_all_books()
+            case "Add" | "2":
+                add_new_book()
+            case "Update" | "3":
+                update_books()
+            case "Delete" | "4":
+                delete_book()
+            case "Search" | "5":
+                search_books()
+            case "Exit" | "6":
+                print("Going back to main menu.")
+                break
+
+
+def books_menu_selector() -> str:
+    """
+    This is a selector for the books menu to make sure that a valid response is given.
+    :return: string choice
+    """
+
+    options = [
+        "View",
+        "Add",
+        "Update",
+        "Delete",
+        "Search",
+        "Exit",
+    ]
+
+    length = range(len(options))
+    numbers = [str(x+1) for x in length]
+
+    user_input = 0
+
+    # The user can either give the exact name or the number equivalent.
+    while user_input not in options and user_input not in numbers:
+        print("This is the Books Menu")
+        for i in length:
+            print(f"{i+1}. {options[i]}")
+
+        user_input = input("Select one of the above.\n").title()
+
+    return user_input
+
+
+def author_menu() -> None:
+    """
+    This is the menu for the authors part of things.
+    :return: None
+    """
+    while True:
+        user_input = author_menu_selector()
+        match user_input:
+            case "Add" | "1":
+                add_author()
+            case "View" | "2":
+                view_authors()
+            case "Edit" | "3":
+                edit_author()
+            case "Delete" | "4":
+                delete_author_selector()
+            case "Add Missing" | "5":
+                add_missing_authors()
+            case "Exit" | "6":
+                print("Going back to the main menu.")
+                break
+
+
+def author_menu_selector() -> str:
+    """
+    This is the selector for the authors menu
+
+    :return: str choice
+    """
+    options = [
+        "Add",
+        "View",
+        "Edit",
+        "Delete",
+        "Add Missing",
+        "Exit",
+    ]
+
+    # Making a dynamic number the user can select so they
+    # don't have to type much
+    length = range(len(options))
+    numbers = [str(x+1) for x in length]
+
+    # Printing out the options and keeping the user locked in
+    # until one is chosen
+    user_input = ''
+    while user_input not in options and user_input not in numbers:
+        print("This is the Authors Menu")
+        for i in length:
+            print(f"{i+1}. {options[i]}")
+
+        user_input = input("Select one of the above.\n").title()
+
+    return user_input
 
 
 check_databases()
 while True:
     action = main_menu()
     match action:
-        case "View" | "1":
-            view_all_books()
-        case "Add" | "2":
-            add_new_book()
-        case "Update" | "3":
-            update_books()
-        case "Delete" | "4":
-            delete_book()
-        case "Search" | "5":
-            search_books()
-        case "Add Author" | "6":
-            add_author()
-        case "View Author" | "7":
-            view_authors()
-        case "Missing Authors" | "8":
-            add_missing_authors()
-        case "Exit" | "9":
+        case "View All" | "1":
+            view_all()
+        case "Books" | "2":
+            books_menu()
+        case "Authors" | "3":
+            author_menu()
+        case "Exit" | "4":
             print("Have a nice day")
             break
