@@ -656,9 +656,6 @@ def update_author(data: list) -> None:
     db.close()
 
 
-# TODO to be added into a menu
-
-
 def edit_author() -> None:
     """
     This is used to get the information to edit an author
