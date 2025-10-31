@@ -152,10 +152,24 @@ def add_new_book() -> None:
     :return: None
     """
 
+    data = load_books()
+    book_ids = 0
+    if data:
+        book_ids = [x[0] for x in data]
+
     print("Now adding a new book")
 
     # Gathering the data
-    book_id = get_id(question="Please type in the books ID\n")
+    while True:
+        book_id = get_id(question="Please type in the books ID\n")
+        if data:
+            if book_id in book_ids:
+                print("That book ID is already used")
+            else:
+                break
+        else:
+            break
+
     title = get_book_title()
     author_id = get_id(question="Please type in the authors ID\n")
     quantity = get_digit(question="How many books are you adding?\n")
