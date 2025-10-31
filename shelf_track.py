@@ -487,9 +487,13 @@ def main_menu() -> str:
         "Exit",
     ]
 
+    # Dynamically adding the number options
+    numbers = range(len(options))
+    numbers = [str(x+1) for x in numbers]
+
     # Printing out the current accepted options and
     # keeping the user trapped until one is selected
-    while user_input not in options:
+    while user_input not in options and user_input not in numbers:
         print("\nThis is the main menu")
         for i in range(len(options)):
             print(f"{i+1}. {options[i]}")
@@ -504,20 +508,20 @@ check_databases()
 while True:
     action = main_menu()
     match action:
-        case "View":
+        case "View" | "1":
             view_all_books()
-        case "Add":
+        case "Add" | "2":
             add_new_book()
-        case "Update":
+        case "Update" | "3":
             update_books()
-        case "Delete":
+        case "Delete" | "4":
             delete_book()
-        case "Search":
+        case "Search" | "5":
             search_books()
-        case "Add Author":
+        case "Add Author" | "6":
             pass
-        case "Missing Authors":
+        case "Missing Authors" | "7":
             pass
-        case "Exit":
+        case "Exit" | "8":
             print("Have a nice day")
             break
