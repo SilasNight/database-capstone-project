@@ -85,39 +85,42 @@ def update_books() -> None:
 
     # Loading needed data and showing a list of books
     data = load_books()
-    view_all_books()
+    if data:
+        view_all_books()
 
-    # Getting the index of the book the user wants to edit
-    index = get_digit(constraint=len(data), question="Type in the number of the"
-                                                     " book would you like to edit?\n")
+        # Getting the index of the book the user wants to edit
+        index = get_digit(constraint=len(data), question="Type in the number of the"
+                                                         " book would you like to edit?\n")
 
-    # Getting the selected book and displaying it
-    book_to_edit = data[index-1]
-    to_display = format_book_data([book_to_edit])
-    for line in to_display:
-        print(line)
+        # Getting the selected book and displaying it
+        book_to_edit = data[index-1]
+        to_display = format_book_data([book_to_edit])
+        for line in to_display:
+            print(line)
 
-    # Getting the new values for the book
-    if yes_or_no(question=f"Do you want to change the title ({book_to_edit[1]})"):
-        new_title = get_book_title(book_to_edit[1])
+        # Getting the new values for the book
+        if yes_or_no(question=f"Do you want to change the title ({book_to_edit[1]})"):
+            new_title = get_book_title(book_to_edit[1])
+        else:
+            new_title = book_to_edit[1]
+
+        if yes_or_no(f"({book_to_edit[2]}) is the old auther ID. Do you want to change it?"):
+            new_author_id = get_id()
+        else:
+            new_author_id = book_to_edit[2]
+
+        if yes_or_no(f"Do you want to change the quantity :{book_to_edit[3]}"):
+            new_quantity = get_digit(question="How many books are there now?\n")
+        else:
+            new_quantity = book_to_edit[3]
+
+        updated_book = [book_to_edit[0], new_title, new_author_id, new_quantity]
+
+        # Giving the data to the other function to update the database.
+        update_books_database(updated_book)
+        print(f"Book {index} has been updated.")
     else:
-        new_title = book_to_edit[1]
-
-    if yes_or_no(f"({book_to_edit[2]}) is the old auther ID. Do you want to change it?"):
-        new_author_id = get_id()
-    else:
-        new_author_id = book_to_edit[2]
-
-    if yes_or_no(f"Do you want to change the quantity :{book_to_edit[3]}"):
-        new_quantity = get_digit(question="How many books are there now?\n")
-    else:
-        new_quantity = book_to_edit[3]
-
-    updated_book = [book_to_edit[0], new_title, new_author_id, new_quantity]
-
-    # Giving the data to the other function to update the database.
-    update_books_database(updated_book)
-    print(f"Book {index} has been updated.")
+        print("There are no books to update.")
 
 
 def append_books(data: list) -> None:
@@ -293,11 +296,14 @@ def view_all_books() -> None:
     """
     data = load_books()
 
-    data = format_book_data(data)
+    if data:
+        data = format_book_data(data)
 
-    # Then prints it all out all at once
-    for line in data:
-        print(line)
+        # Then prints it all out all at once
+        for line in data:
+            print(line)
+    else:
+        print("No books to view.")
 
 
 def format_book_data(data: list) -> list:
@@ -329,10 +335,11 @@ def format_book_data(data: list) -> list:
     return books_data
 
 
-def load_books() -> list:
+def load_books() -> list | bool:
     """
     Loading all the data from the books table and turning it into a
     list of lists.
+    Also Checks if there is data to return.
     :return: list of books data in a list
     """
 
@@ -348,8 +355,11 @@ def load_books() -> list:
     db.close()
 
     # Making it a list of lists which is easier to use.
-    data = [list(x) for x in data]
-    return data
+    if len(data) == 0:
+        return False
+    else:
+        data = [list(x) for x in data]
+        return data
 
 
 def search_books() -> None:
@@ -361,37 +371,41 @@ def search_books() -> None:
 
     # Loading relevant data
     data = load_books()
-    book_ids = [x[0] for x in data]
 
-    while True:
+    if data:
+        book_ids = [x[0] for x in data]
 
-        # Listing all the ID's
-        print("These are the searchable book IDs")
-        for ID in book_ids:
-            print(ID)
+        while True:
 
-        # Making sure that the user want's to search after
-        # being shown all the ID's
-        print("Would you like to search?")
-        if yes_or_no():
+            # Listing all the ID's
+            print("These are the searchable book IDs")
+            for ID in book_ids:
+                print(ID)
 
-            # Using the function to get a valid ID from the user
-            user_input = get_id(question="Please type in an ID to search for.\n")
-        else:
-            print("Going back to main menu")
-            break
+            # Making sure that the user want's to search after
+            # being shown all the ID's
+            print("Would you like to search?")
+            if yes_or_no():
 
-        # If the user entered an ID that is in the database it is displayed.
-        if user_input in book_ids:
-            print("Book Found.\n")
-            for book in data:
-                if book[0] == user_input:
-                    book = format_book_data([book])
-                    for line in book:
-                        print(line)
-                    break
-        else:
-            print("ID doesn't match id's in the system.")
+                # Using the function to get a valid ID from the user
+                user_input = get_id(question="Please type in an ID to search for.\n")
+            else:
+                print("Going back to main menu")
+                break
+
+            # If the user entered an ID that is in the database it is displayed.
+            if user_input in book_ids:
+                print("Book Found.\n")
+                for book in data:
+                    if book[0] == user_input:
+                        book = format_book_data([book])
+                        for line in book:
+                            print(line)
+                        break
+            else:
+                print("ID doesn't match id's in the system.")
+    else:
+        print("There are no books available to search through.")
 
 
 def delete_book():
@@ -403,16 +417,19 @@ def delete_book():
     """
 
     data = load_books()
-    view_all_books()
+    if data:
+        view_all_books()
 
-    index = get_digit(len(data), "Select which book you would "
-                                 "like to delete by number.\n")
+        index = get_digit(len(data), "Select which book you would "
+                                     "like to delete by number.\n")
 
-    book_to_delete = data[index-1]
-    book_id_to_delete = book_to_delete[0]
+        book_to_delete = data[index-1]
+        book_id_to_delete = book_to_delete[0]
 
-    if yes_or_no("Are you sure you want to delete the book?"):
-        delete_from_database(book_id_to_delete)
+        if yes_or_no("Are you sure you want to delete the book?"):
+            delete_from_database(book_id_to_delete)
+    else:
+        print("There are no books to delete.")
 
 
 def delete_from_database(book_id: str) -> None:
